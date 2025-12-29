@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>| Happy New Year🎉 |</title>
+    <style>
+      body {
+        margin: 0;
+        background-color: black;
+        overflow: hidden;
+        font-family: "Courier New", Courier, monospace;
+        touch-action: none;
+      }
+      canvas {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      #text {
+        position: absolute;
+        width: 90%;
+        max-width: 400px;
+        left: 20px;
+        top: 50px;
+        z-index: 10;
+        color: white;
+        pointer-events: none;
+        transition: top 3s ease-in-out, opacity 2s ease;
+      }
+      #code {
+        font-size: 16px;
+        line-height: 1.5;
+      }
+      .say {
+        display: none;
+        margin-bottom: 8px;
+        text-shadow: 1px 1px 8px rgba(0, 0, 0, 0.9);
+      }
+      .author {
+        font-weight: bold;
+        margin-top: 15px;
+        color: #c3c3c3;
+      }
+
+      /* Rotate Overlay Styling */
+      #rotate-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        color: white;
+        z-index: 1000;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+
+      /* Phone Rotate Icon Animation */
+      .phone-icon {
+        width: 45px;
+        height: 80px;
+        border: 3px solid #ffb6c1;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        position: relative;
+        animation: rotateAnim 2s ease-in-out infinite;
+      }
+      .phone-icon::after {
+        content: "";
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 6px;
+        height: 6px;
+        background: #ffb6c1;
+        border-radius: 50%;
+      }
+
+      @keyframes rotateAnim {
+        0% {
+          transform: rotate(0deg);
+        }
+        40% {
+          transform: rotate(-90deg);
+        }
+        100% {
+          transform: rotate(-90deg);
+        }
+      }
+
+      @media (orientation: portrait) {
+        #rotate-overlay {
+          display: flex;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="rotate-overlay">
+      <div class="phone-icon"></div>
+      <h2>Please Rotate Your Phone</h2>
+      <p>Best viewed in Landscape mode 👀</p>
+    </div>
+
+    <div id="text">
+      <div id="code">
+        <span class="say">Hey You! 💖</span>
+        <span class="say">Wishing you a very Happy New Year! 🎉</span>
+        <span class="say">Just saying... you're pretty awesome! 😊</span>
+        <span class="say">May this year bring happiness and joy 🤍</span>
+        <span class="say">Wishing you good health and success ✨</span>
+        <span class="say">Sending good vibes and maybe a wink:)</span>
+        <span class="say">Keep smiling always..😊</span>
+        <span class="say author">--> Your Debasish is wishing you...🤍</span>
+      </div>
+    </div>
+
+    <canvas id="treeCanvas"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <script>
+      const canvas = document.getElementById("treeCanvas");
+      const ctx = canvas.getContext("2d");
+
+      let branches = [],
+        leafPositions = [],
+        fallingHearts = [];
+      let treeTargetX, treeCurrentX, treeTargetY, treeCurrentY;
+      let animationStarted = false,
+        bIndex = 0,
+        lIndex = 0;
+      let scaleFactor = 1;
+
+      function startTypingEffect() {
+        var lines = $(".say");
+        var currentLine = 0;
+
+        function typeLine() {
+          if (currentLine < lines.length) {
+            $(lines[currentLine])
+              .css({ opacity: 0, display: "block" })
+              .animate({ opacity: 1 }, 1000, function () {
+                currentLine++;
+                setTimeout(typeLine, 600);
+              });
+          } else {
+            setTimeout(scrollTextUp, 2000);
+          }
+        }
+
+        function scrollTextUp() {
+          $("#text").css({ top: "-500px", opacity: "0" });
+          setTimeout(() => {
+            resetTreeToCenter();
+          }, 1500);
+        }
+        typeLine();
+      }
+
+      function resetTreeToCenter() {
+        treeTargetX = canvas.width / 2;
+      }
+
+      function init() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        branches = [];
+        leafPositions = [];
+        fallingHearts = [];
+        bIndex = 0;
+        lIndex = 0;
+
+        $("#text").css({ top: "50px", opacity: "1" });
+        $(".say").hide();
+
+        if (window.innerWidth > window.innerHeight) {
+          scaleFactor = canvas.height / 600;
+          treeTargetX = canvas.width / 2;
+          treeCurrentX = canvas.width / 2;
+          treeTargetY = canvas.height - 15 * scaleFactor;
+          treeCurrentY = canvas.height - 15 * scaleFactor;
+
+          let treeBaseLength = canvas.height * 0.2;
+          let initialBranchWidth = 12 * scaleFactor;
+
+          createHeartTree(
+            treeTargetX,
+            treeTargetY,
+            treeBaseLength,
+            0,
+            initialBranchWidth,
+            8
+          );
+
+          if (!animationStarted) {
+            animationStarted = true;
+            animateTree();
+          }
+        }
+      }
+
+      function createHeartTree(startX, startY, len, angle, branchWidth, depth) {
+        let endX = startX + Math.sin((angle * Math.PI) / 180) * len;
+        let endY = startY - Math.cos((angle * Math.PI) / 180) * len;
+        branches.push({
+          relStartX: startX - treeTargetX,
+          relStartY: startY - treeTargetY,
+          relEndX: endX - treeTargetX,
+          relEndY: endY - treeTargetY,
+          width: branchWidth,
+        });
+
+        if (depth <= 0) {
+          for (let i = 0; i < 6; i++) {
+            leafPositions.push({
+              relX:
+                endX - treeTargetX + (Math.random() - 0.5) * (40 * scaleFactor),
+              relY:
+                endY - treeTargetY + (Math.random() - 0.5) * (40 * scaleFactor),
+              size: Math.random() * 4 + 2,
+              color: ["#FF1493", "#FF69B4", "#FFC0CB", "#FF0000", "#FF4500"][
+                Math.floor(Math.random() * 5)
+              ],
+              isFalling: false,
+            });
+          }
+          return;
+        }
+        createHeartTree(
+          endX,
+          endY,
+          len * 0.8,
+          angle - (22 + (10 - depth) * 2),
+          branchWidth * 0.7,
+          depth - 1
+        );
+        createHeartTree(
+          endX,
+          endY,
+          len * 0.8,
+          angle + (22 + (10 - depth) * 2),
+          branchWidth * 0.7,
+          depth - 1
+        );
+      }
+
+      function animateTree() {
+        let speed = 4;
+        for (let i = 0; i < speed; i++) if (bIndex < branches.length) bIndex++;
+        if (bIndex < branches.length) requestAnimationFrame(animateTree);
+        else {
+          leafPositions.sort(() => Math.random() - 0.5);
+          setTimeout(animateLeaves, 300);
+        }
+      }
+
+      function animateLeaves() {
+        let speed = 20;
+        for (let i = 0; i < speed; i++)
+          if (lIndex < leafPositions.length) lIndex++;
+        if (lIndex < leafPositions.length) requestAnimationFrame(animateLeaves);
+        else setTimeout(moveTreeToSide, 800);
+      }
+
+      function moveTreeToSide() {
+        treeTargetX = canvas.width * 0.75;
+        setTimeout(() => {
+          startTypingEffect();
+          setInterval(startFalling, 500);
+        }, 800);
+      }
+
+      function drawHeart(x, y, size, color, alpha = 1) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.fillStyle = color;
+        let s = size * scaleFactor;
+        ctx.moveTo(x, y);
+        ctx.bezierCurveTo(x, y - s / 2, x - s, y - s / 2, x - s, y);
+        ctx.bezierCurveTo(x - s, y + s / 2, x, y + s, x, y + s * 1.5);
+        ctx.bezierCurveTo(x, y + s, x + s, y + s / 2, x + s, y);
+        ctx.bezierCurveTo(x + s, y - s / 2, x, y - s / 2, x, y);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function startFalling() {
+        let available = leafPositions.filter((l) => !l.isFalling);
+        if (available.length > 0) {
+          let target = available[Math.floor(Math.random() * available.length)];
+          target.isFalling = true;
+          fallingHearts.push({
+            x: treeCurrentX + target.relX,
+            y: treeCurrentY + target.relY,
+            size: target.size,
+            color: target.color,
+            speed: (Math.random() * 1.5 + 1) * scaleFactor,
+            wind: (Math.random() - 0.5) * 1,
+            alpha: 1,
+          });
+        }
+      }
+
+      function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        treeCurrentX += (treeTargetX - treeCurrentX) * 0.045;
+        treeCurrentY += (treeTargetY - treeCurrentY) * 0.045;
+
+        branches.slice(0, bIndex).forEach((b) => {
+          ctx.beginPath();
+          ctx.strokeStyle = "pink";
+          ctx.lineWidth = b.width;
+          ctx.lineCap = "round";
+          ctx.moveTo(treeCurrentX + b.relStartX, treeCurrentY + b.relStartY);
+          ctx.lineTo(treeCurrentX + b.relEndX, treeCurrentY + b.relEndY);
+          ctx.stroke();
+        });
+
+        leafPositions.slice(0, lIndex).forEach((lp) => {
+          if (!lp.isFalling)
+            drawHeart(
+              treeCurrentX + lp.relX,
+              treeCurrentY + lp.relY,
+              lp.size,
+              lp.color
+            );
+        });
+
+        for (let i = fallingHearts.length - 1; i >= 0; i--) {
+          let fh = fallingHearts[i];
+          fh.y += fh.speed;
+          fh.x += Math.sin(fh.y / 40) * fh.wind;
+          drawHeart(fh.x, fh.y, fh.size, fh.color, fh.alpha);
+          if (fh.y > canvas.height) fh.alpha -= 0.02;
+          if (fh.alpha <= 0) fallingHearts.splice(i, 1);
+        }
+        requestAnimationFrame(update);
+      }
+
+      window.addEventListener("resize", () => {
+        animationStarted = false;
+        init();
+      });
+      init();
+      update();
+    </script>
+  </body>
+</html>
